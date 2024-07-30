@@ -1,77 +1,91 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import { REALTIME_DB } from '@/constants/FirebaseConfig';
+import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router';
+import { onValue, ref } from 'firebase/database';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
+import { BookCard } from './BookCard';
 
-import { ExternalLink } from './ExternalLink';
-import { MonoText } from './StyledText';
-import { Text, View } from './Themed';
 
-import Colors from '@/constants/Colors';
 
-export default function EditScreenInfo({ path }: { path: string }) {
-  return (
-    <View>
-      <View style={styles.getStartedContainer}>
-        <Text
-          style={styles.getStartedText}
-          lightColor="rgba(0,0,0,0.8)"
-          darkColor="rgba(255,255,255,0.8)">
-          Open up the code for this screen:
-        </Text>
+  export default function EditScreenInfo() {
+    const navigation = useNavigation();
+    const [bookList, setBookList] = useState<{ id: string }[]>([])
 
-        <View
-          style={[styles.codeHighlightContainer, styles.homeScreenFilename]}
-          darkColor="rgba(255,255,255,0.05)"
-          lightColor="rgba(0,0,0,0.05)">
-          <MonoText>{path}</MonoText>
-        </View>
+    useEffect(() => {
+      
+      const bookRef = ref(REALTIME_DB, 'books');
+      
+      onValue(bookRef, (snapshot) => {
+        const books = snapshot.val();
+        setBookList(books);
 
-        <Text
-          style={styles.getStartedText}
-          lightColor="rgba(0,0,0,0.8)"
-          darkColor="rgba(255,255,255,0.8)">
-          Change any of the text, save the file, and your app will automatically update.
-        </Text>
-      </View>
+        console.log(bookList);
+      });
+    }, []);
 
-      <View style={styles.helpContainer}>
-        <ExternalLink
-          style={styles.helpLink}
-          href="https://docs.expo.io/get-started/create-a-new-app/#opening-the-app-on-your-phonetablet">
-          <Text style={styles.helpLinkText} lightColor={Colors.light.tint}>
-            Tap here if your app doesn't automatically update after making changes
-          </Text>
-        </ExternalLink>
-      </View>
-    </View>
-  );
+  
+
+    const handleCardPress = (transaction: any) => {
+      router.push({ pathname: 'home/detail', params: { amount: transaction.amount, brand: transaction.brand, date: transaction.date, address: transaction.address } });
+    };
+
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+      {
+        bookList.map((book): any => (
+          <BookCard
+            key={book.id}
+            book={book}
+          />
+        )
+      )}
+      </ScrollView>
+    );
 }
 
 const styles = StyleSheet.create({
-  getStartedContainer: {
+  container: {
     alignItems: 'center',
-    marginHorizontal: 50,
-  },
-  homeScreenFilename: {
-    marginVertical: 7,
-  },
-  codeHighlightContainer: {
-    borderRadius: 3,
-    paddingHorizontal: 4,
-  },
-  getStartedText: {
-    fontSize: 17,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  helpContainer: {
-    marginTop: 15,
     marginHorizontal: 20,
+  },
+  cardContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 20,
+    marginVertical: 8,
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    shadowColor: '#000000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
-  helpLink: {
-    paddingVertical: 15,
+  cardContent: {
+    flexDirection: 'column',
   },
-  helpLinkText: {
-    textAlign: 'center',
+  brandText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333333',
+  },
+  amountText: {
+    marginTop: 5,
+    fontSize: 18,
+    color: '#666666',
+  },
+  arrowText: {
+    fontSize: 24,
+    color: '#666666',
+  },
+  arrowIcon: {
+    fontSize: 24,
+    color: '#666666',
   },
 });

@@ -7,10 +7,11 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export {
   // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
+  ErrorBoundary
 } from 'expo-router';
 
 export const unstable_settings = {
@@ -49,11 +50,16 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme();
 
   return (
+  <SafeAreaView style={{ flex: 1 }}>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+        <Stack.Screen
+            name="(tabs)"
+            options={{ headerShown: false }}
+        />
+        {/* <Stack.Screen name="+not-found" /> */}
+        </Stack>
     </ThemeProvider>
+  </SafeAreaView>
   );
 }
