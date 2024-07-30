@@ -1,8 +1,10 @@
 
 import { Text, View } from '@/components/Themed';
+import { REALTIME_DB } from '@/constants/FirebaseConfig';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { get, ref, set, update } from 'firebase/database';
+import { useEffect, useState } from 'react';
 import { Alert, Image, ScrollView, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // Assuming you want to use MaterialCommunityIcons
 
@@ -20,40 +22,75 @@ const BackButton = () => {
     );
   };
 
-const Detail: React.FC<DetailProps> = () => {
-    var { book_name, author_name, cover_page, id, rating, brief_summary }= useLocalSearchParams();
-    var [buttonTextString, setButtonText] = useState('Borrow This Book');
+export const Detail: React.FC<DetailProps> = () => {
+    var { book_name, author_name, cover_page, id, rating, brief_summary, borrowed }= useLocalSearchParams();
+    const [buttonTextString, setButtonText] = useState('Borrow This Book');
+    const [borrowedState, setBorrowedState] = useState(false);
+    const idB = id as any - 1;
+    const bookRef = ref(REALTIME_DB, 'books/' + idB);
+    const borrowedRef = ref(REALTIME_DB, 'borrowed');
+
+    useEffect(() => {
+        if (borrowed === 'true') {
+          setBorrowedState(true);
+          setButtonText('Return This Book');
+        }
+      }, []);
 
     const handleBorrow = () => {
-        if(buttonTextString === 'Borrow This Book') {
-            Alert.alert('Confirmation', 'Are you sure you want to borrow this book?', [
-                {
-                    text: 'Yes',
-                    onPress: () => {
-                        setButtonText('Return This Book');
+        if (!borrowedState) {
+            Alert.alert('Borrow Confirmation', 'Are you sure you want to borrow this book?', [
+              {
+                text: 'Yes',
+                onPress: () => {
+
+                  get(borrowedRef).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        var b = snapshot.val();
+                        if(b.borrowed < 2) {
+                            setButtonText('Return This Book');
+                            setBorrowedState(true);
+                            update(bookRef, { borrowed: true });
+                            set(borrowedRef, { borrowed: b.borrowed + 1 });
+                        }else {
+                            Alert.alert('Borrow Limit Reached', 'You can only borrow 2 books at a time');
+                        }
                     }
-                },
-                {
-                    text: 'No',
-                    onPress: () => console.log('No Pressed')
+                  }).catch((error) => {
+                    console.error(error);
+                  });
                 }
-            ]); 
-        }
-        else {
+              },
+              {
+                text: 'No',
+                onPress: () => console.log('No Pressed')
+              }
+            ]);
+          } else {
             Alert.alert('Return Confirmation', 'Are you sure you want to return this book?', [
-                {
-                    text: 'Yes',
-                    onPress: () => {
-                        setButtonText('Borrow This Book');
-                    }
-                },
-                {
-                    text: 'No',
-                    onPress: () => console.log('No Pressed')
+              {
+                text: 'Yes',
+                onPress: () => {
+                  setButtonText('Borrow This Book');
+                  setBorrowedState(false);
+                  update(bookRef, { borrowed: false });
+
+                  get(borrowedRef).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        var b = snapshot.val();
+                        set(borrowedRef, { borrowed: b.borrowed - 1 });
+                    } else {          }
+                  }).catch((error) => {
+                    console.error(error);
+                  });
                 }
-            ]
-            );
-        }
+              },
+              {
+                text: 'No',
+                onPress: () => console.log('No Pressed')
+              }
+            ]);
+          }
     }
 
     return (
@@ -68,7 +105,7 @@ const Detail: React.FC<DetailProps> = () => {
                     <Text style={styles.summary}>{brief_summary}</Text>
                 </View>
                 <TouchableOpacity style={
-                    buttonTextString === 'Borrow This Book' ? styles.button : styles.buttonReturn
+                    !borrowedState ? styles.button : styles.buttonReturn
                 } onPress={handleBorrow}>
                     <Text style={styles.buttonText}>{buttonTextString}</Text>
                 </TouchableOpacity>

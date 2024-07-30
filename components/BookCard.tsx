@@ -20,8 +20,9 @@ export const BookCard: React.FC<BookCardProps> = ({book}) => {
       var id = book.id;
       var rating = book.rating;
       var brief_summary = book.brief_summary;
+      var borrowed = book.borrowed;
 
-      router.push({ pathname: `home/detail`, params: { book_name, author_name, cover_page, id, rating, brief_summary } });
+      router.push({ pathname: `home/detail`, params: { book_name, author_name, cover_page, id, rating, brief_summary, borrowed } });
     };
 
     return (
